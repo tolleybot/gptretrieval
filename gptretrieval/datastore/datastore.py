@@ -2,13 +2,13 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 
 
-from models.models import (
+from ..models.models import (
     Query,
     QueryResult,
     QueryWithEmbedding,
 )
 
-from services.openai import get_embeddings
+from ..services.openai import get_embeddings
 
 
 class DataStore(ABC):
