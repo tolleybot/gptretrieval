@@ -27,7 +27,7 @@ from pymilvus import (
     MilvusException,
 )
 
-from models.models import QueryResult, QueryWithEmbedding, DocumentMetadataFilter
+from ...models.models import QueryResult, QueryWithEmbedding, DocumentMetadataFilter
 
 from datastore.datastore import DataStore
 
