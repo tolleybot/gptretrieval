@@ -31,6 +31,8 @@ setup(
         "beautifulsoup4",
         "openai",
         "tenacity",
+        "tree_sitter",
+        "tree_sitter_languages",
     ],
     project_urls={  # Optional
         "Bug Reports": "https://github.com/tolleybot/gptretrieval.git/issues",
