@@ -107,10 +107,10 @@ class MilvusDataStore(DataStore):
         The Milvus Datastore allows for storing your indexes and metadata within a Milvus instance.
 
         Args:
-                        create_new (Optional[bool], optional): Whether to overwrite if collection already exists. Defaults to True.
-                        consistency_level(str, optional): Specify the collection consistency level.
-                                                                                                                                                                        Defaults to "Bounded" for search performance.
-                                                                                                                                                                        Set to "Strong" in test cases for result validation.
+                                        create_new (Optional[bool], optional): Whether to overwrite if collection already exists. Defaults to True.
+                                        consistency_level(str, optional): Specify the collection consistency level.
+                                                                                                                                                                                                                                                                                                                                        Defaults to "Bounded" for search performance.
+                                                                                                                                                                                                                                                                                                                                        Set to "Strong" in test cases for result validation.
         """
         self.create_new = create_new
         self.consistency_level = consistency_level
@@ -162,10 +162,10 @@ class MilvusDataStore(DataStore):
         """Converts a DocumentMetdataFilter to the expression that Milvus takes.
 
         Args:
-            filter (DocumentMetadataFilter): The Filter to convert to Milvus expression.
+                filter (DocumentMetadataFilter): The Filter to convert to Milvus expression.
 
         Returns:
-            Optional[str]: The filter if valid, otherwise None.
+                Optional[str]: The filter if valid, otherwise None.
         """
         filters = []
         # Go through all the fields and their values
@@ -247,7 +247,7 @@ class MilvusDataStore(DataStore):
         """Create a collection based on environment and passed in variables.
 
         Args:
-                        create_new (bool): Whether to overwrite if collection already exists.
+                                        create_new (bool): Whether to overwrite if collection already exists.
         """
         try:
             # If the collection exists and create_new is True, drop the existing collection
@@ -279,34 +279,87 @@ class MilvusDataStore(DataStore):
             print("Failed to create collection '{collection_name}', error: {e}")
 
     def _create_index(self):
-        # How about if the first index is not vector index?
-        for index in self.col.indexes:
-            idx = index.to_dict()
-            if idx["field"] == self.embedding_field:
-                print("Index already exists: {}".format(idx))
-                self.index_params = idx["index_param"]
-                break
+        try:
+            # If no index on the collection, create one
+            if len(self.col.indexes) == 0:
+                if self.index_params is not None:
+                    # Convert the string format to JSON format parameters passed by MILVUS_INDEX_PARAMS
+                    self.index_params = json.loads(self.index_params)
+                    print("Create Milvus index: {}".format(self.index_params))
+                    # Create an index on the 'embedding' field with the index params found in init
+                    self.col.create_index(
+                        EMBEDDING_FIELD, index_params=self.index_params
+                    )
+                else:
+                    # If no index param supplied, to first create an HNSW index for Milvus
+                    try:
+                        i_p = {
+                            "metric_type": "IP",
+                            "index_type": "HNSW",
+                            "params": {"M": 8, "efConstruction": 64},
+                        }
+                        print(
+                            "Attempting creation of Milvus '{}' index".format(
+                                i_p["index_type"]
+                            )
+                        )
+                        self.col.create_index(EMBEDDING_FIELD, index_params=i_p)
+                        self.index_params = i_p
+                        print(
+                            "Creation of Milvus '{}' index successful".format(
+                                i_p["index_type"]
+                            )
+                        )
+                    # If create fails, most likely due to being Zilliz Cloud instance, try to create an AutoIndex
+                    except MilvusException:
+                        print("Attempting creation of Milvus default index")
+                        i_p = {
+                            "metric_type": "IP",
+                            "index_type": "AUTOINDEX",
+                            "params": {},
+                        }
+                        self.col.create_index(EMBEDDING_FIELD, index_params=i_p)
+                        self.index_params = i_p
+                        print("Creation of Milvus default index successful")
+            # If an index already exists, grab its params
+            else:
+                # How about if the first index is not vector index?
+                for index in self.col.indexes:
+                    idx = index.to_dict()
+                    if idx["field"] == EMBEDDING_FIELD:
+                        print("Index already exists: {}".format(idx))
+                        self.index_params = idx["index_param"]
+                        break
 
-        self.col.load()
+            self.col.load()
 
-        # The default search params
-        metric_type = "IP"
-        if "metric_type" in self.index_params:
-            metric_type = self.index_params["metric_type"]
-        default_search_params = {
-            "IVF_FLAT": {"metric_type": metric_type, "params": {"nprobe": 10}},
-            "IVF_SQ8": {"metric_type": metric_type, "params": {"nprobe": 10}},
-            "IVF_PQ": {"metric_type": metric_type, "params": {"nprobe": 10}},
-            "HNSW": {"metric_type": metric_type, "params": {"ef": 10}},
-            "RHNSW_FLAT": {"metric_type": metric_type, "params": {"ef": 10}},
-            "RHNSW_SQ": {"metric_type": metric_type, "params": {"ef": 10}},
-            "RHNSW_PQ": {"metric_type": metric_type, "params": {"ef": 10}},
-            "IVF_HNSW": {
-                "metric_type": metric_type,
-                "params": {"nprobe": 10, "ef": 10},
-            },
-            "ANNOY": {"metric_type": metric_type, "params": {"search_k": 10}},
-            "AUTOINDEX": {"metric_type": metric_type, "params": {}},
-        }
-        # Set the search params
-        self.search_params = default_search_params[self.index_params["index_type"]]
+            if self.search_params is not None:
+                # Convert the string format to JSON format parameters passed by MILVUS_SEARCH_PARAMS
+                self.search_params = json.loads(self.search_params)
+            else:
+                # The default search params
+                metric_type = "IP"
+                if "metric_type" in self.index_params:
+                    metric_type = self.index_params["metric_type"]
+                default_search_params = {
+                    "IVF_FLAT": {"metric_type": metric_type, "params": {"nprobe": 10}},
+                    "IVF_SQ8": {"metric_type": metric_type, "params": {"nprobe": 10}},
+                    "IVF_PQ": {"metric_type": metric_type, "params": {"nprobe": 10}},
+                    "HNSW": {"metric_type": metric_type, "params": {"ef": 10}},
+                    "RHNSW_FLAT": {"metric_type": metric_type, "params": {"ef": 10}},
+                    "RHNSW_SQ": {"metric_type": metric_type, "params": {"ef": 10}},
+                    "RHNSW_PQ": {"metric_type": metric_type, "params": {"ef": 10}},
+                    "IVF_HNSW": {
+                        "metric_type": metric_type,
+                        "params": {"nprobe": 10, "ef": 10},
+                    },
+                    "ANNOY": {"metric_type": metric_type, "params": {"search_k": 10}},
+                    "AUTOINDEX": {"metric_type": metric_type, "params": {}},
+                }
+                # Set the search params
+                self.search_params = default_search_params[
+                    self.index_params["index_type"]
+                ]
+            print(f"Milvus search parameters: {self.search_params}")
+        except Exception as e:
+            print("Failed to create index, error: {e}")
