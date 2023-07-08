@@ -30,6 +30,7 @@ setup(
         "pyyaml",
         "beautifulsoup4",
         "openai",
+        "tenacity",
     ],
     project_urls={  # Optional
         "Bug Reports": "https://github.com/tolleybot/gptretrieval.git/issues",
