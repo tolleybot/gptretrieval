@@ -29,6 +29,7 @@ setup(
         "pymilvus",
         "pyyaml",
         "beautifulsoup4",
+        "openai",
     ],
     project_urls={  # Optional
         "Bug Reports": "https://github.com/tolleybot/gptretrieval.git/issues",
