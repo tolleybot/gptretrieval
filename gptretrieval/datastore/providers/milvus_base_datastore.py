@@ -28,8 +28,7 @@ from pymilvus import (
 )
 
 from ...models.models import QueryResult, QueryWithEmbedding, DocumentMetadataFilter
-
-from datastore.datastore import DataStore
+from ...datastore.datastore import DataStore
 
 
 class Required:
