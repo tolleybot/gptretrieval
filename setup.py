@@ -29,6 +29,7 @@ setup(
         "pymilvus",
         "pyyaml",
         "beautifulsoup4",
+        "markdown",
         "openai",
         "tenacity",
         "tree_sitter",
