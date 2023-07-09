@@ -1,3 +1,4 @@
+import asyncio
 import os
 from uuid import uuid4
 
@@ -25,6 +26,9 @@ from pymilvus import (
     DataType,
     CollectionSchema,
     MilvusException,
+    DocumentChunkWithScore,
+    DocumentChunkMetadata,
+    Source,
 )
 
 from ...models.models import QueryResult, QueryWithEmbedding, DocumentMetadataFilter
@@ -108,10 +112,10 @@ class MilvusDataStore(DataStore):
         The Milvus Datastore allows for storing your indexes and metadata within a Milvus instance.
 
         Args:
-                                        create_new (Optional[bool], optional): Whether to overwrite if collection already exists. Defaults to True.
-                                        consistency_level(str, optional): Specify the collection consistency level.
-                                                                                                                                                                                                                                                                                                                                        Defaults to "Bounded" for search performance.
-                                                                                                                                                                                                                                                                                                                                        Set to "Strong" in test cases for result validation.
+                                                                        create_new (Optional[bool], optional): Whether to overwrite if collection already exists. Defaults to True.
+                                                                        consistency_level(str, optional): Specify the collection consistency level.
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        Defaults to "Bounded" for search performance.
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        Set to "Strong" in test cases for result validation.
         """
         self.create_new = create_new
         self.consistency_level = consistency_level
@@ -155,18 +159,85 @@ class MilvusDataStore(DataStore):
     async def _query(
         self,
         queries: List[QueryWithEmbedding],
+        top_k: int = None,
     ) -> List[QueryResult]:
-        """Query the Milvus collection for the given queries"""
-        pass
+        """Query the QueryWithEmbedding against the MilvusDocumentSearch
+
+        Search the embedding and its filter in the collection.
+
+        Args:
+                queries (List[QueryWithEmbedding]): The list of searches to perform.
+
+        Returns:
+                List[QueryResult]: Results for each search.
+        """
+
+        # Async to perform the query, adapted from pinecone implementation
+        async def _single_query(query: QueryWithEmbedding) -> QueryResult:
+            try:
+                filter = None
+                # Set the filter to expression that is valid for Milvus
+                if query.filter is not None:
+                    # Either a valid filter or None will be returned
+                    filter = self._get_filter(query.filter)
+
+                # Perform our search
+                return_from = 2 if self._schema_ver == "V1" else 1
+                top_k_ = query.top_k if top_k is None else top_k
+                res = self.col.search(
+                    data=[query.embedding],
+                    anns_field=EMBEDDING_FIELD,
+                    param=self.search_params,
+                    limit=top_k_,
+                    expr=filter,
+                    output_fields=[
+                        field[0] for field in self._get_schema()[return_from:]
+                    ],  # Ignoring pk, embedding
+                )
+                # Results that will hold our DocumentChunkWithScores
+                results = []
+                # Parse every result for our search
+                for hit in res[0]:  # type: ignore
+                    # The distance score for the search result, falls under DocumentChunkWithScore
+                    score = hit.score
+                    # Our metadata info, falls under DocumentChunkMetadata
+                    metadata = {}
+                    # Grab the values that correspond to our fields, ignore pk and embedding.
+                    for x in [field[0] for field in self._get_schema()[return_from:]]:
+                        metadata[x] = hit.entity.get(x)
+                    # If the source isn't valid, convert to None
+                    if metadata["source"] not in Source.__members__:
+                        metadata["source"] = None
+                    # Text falls under the DocumentChunk
+                    text = metadata.pop("text")
+                    # Id falls under the DocumentChunk
+                    ids = metadata.pop("id")
+                    chunk = DocumentChunkWithScore(
+                        id=ids,
+                        score=score,
+                        text=text,
+                        metadata=DocumentChunkMetadata(**metadata),
+                    )
+                    results.append(chunk)
+
+                return QueryResult(query=query.query, results=results)
+            except Exception as e:
+                self._print_err("Failed to query, error: {}".format(e))
+                return QueryResult(query=query.query, results=[])
+
+        results: List[QueryResult] = await asyncio.gather(
+            *[_single_query(query) for query in queries]
+        )
+        return results
 
     def _get_filter(self, filter: DocumentMetadataFilter) -> Optional[str]:
         """Converts a DocumentMetdataFilter to the expression that Milvus takes.
 
         Args:
-                filter (DocumentMetadataFilter): The Filter to convert to Milvus expression.
+                        filter (DocumentMetadataFilter): The Filter to convert to Milvus expression.
 
         Returns:
-                Optional[str]: The filter if valid, otherwise None.
+                        Optional[str]: The filter if valid, otherwise None.
         """
         filters = []
         # Go through all the fields and their values
@@ -248,7 +319,7 @@ class MilvusDataStore(DataStore):
         """Create a collection based on environment and passed in variables.
 
         Args:
-                                        create_new (bool): Whether to overwrite if collection already exists.
+                                                                        create_new (bool): Whether to overwrite if collection already exists.
         """
         try:
             # If the collection exists and create_new is True, drop the existing collection
