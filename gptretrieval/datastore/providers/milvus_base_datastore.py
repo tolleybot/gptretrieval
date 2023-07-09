@@ -29,6 +29,7 @@ from pymilvus import (
 
 from ...models.models import QueryResult, QueryWithEmbedding, DocumentMetadataFilter
 from ...datastore.datastore import DataStore
+from ...services.date import to_unix_timestamp
 
 
 class Required:
