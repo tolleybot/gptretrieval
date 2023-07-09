@@ -264,10 +264,10 @@ class MilvusDataStore(DataStore):
                     collection_name,
                     schema=schema,
                     using=self.alias,
-                    consistency_level=self._consistency_level,
+                    consistency_level=self.consistency_level,
                 )
                 print(
-                    f"Create Milvus collection '{collection_name}' and consistency level {self._consistency_level}"
+                    f"Create Milvus collection '{collection_name}' and consistency level {self.consistency_level}"
                 )
             else:
                 # If the collection exists, point to it
