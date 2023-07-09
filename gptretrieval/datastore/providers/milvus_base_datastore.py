@@ -276,7 +276,7 @@ class MilvusDataStore(DataStore):
 
                 print(f"Milvus collection '{collection_name}' already exists")
         except Exception as e:
-            print("Failed to create collection '{collection_name}', error: {e}")
+            print(f"Failed to create collection '{collection_name}', error: {e}")
 
     def _create_index(self):
         try:
