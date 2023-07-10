@@ -187,7 +187,6 @@ class MilvusDataStore(DataStore):
                     filter = self._get_filter(query.filter)
 
                 # Perform our search
-                return_from = 2 if self._schema_ver == "V1" else 1
                 top_k_ = query.top_k if top_k is None else top_k
                 res = self.col.search(
                     data=[query.embedding],
@@ -196,7 +195,7 @@ class MilvusDataStore(DataStore):
                     limit=top_k_,
                     expr=filter,
                     output_fields=[
-                        field[0] for field in self._get_schema()[return_from:]
+                        field[0] for field in self._get_schema()[1:]
                     ],  # Ignoring pk, embedding
                 )
                 # Results that will hold our DocumentChunkWithScores
@@ -208,7 +207,7 @@ class MilvusDataStore(DataStore):
                     # Our metadata info, falls under DocumentChunkMetadata
                     metadata = {}
                     # Grab the values that correspond to our fields, ignore pk and embedding.
-                    for x in [field[0] for field in self._get_schema()[return_from:]]:
+                    for x in [field[0] for field in self._get_schema()[1:]]:
                         metadata[x] = hit.entity.get(x)
                     # If the source isn't valid, convert to None
                     if metadata["source"] not in Source.__members__:
