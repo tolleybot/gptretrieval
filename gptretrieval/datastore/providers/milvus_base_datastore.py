@@ -26,12 +26,17 @@ from pymilvus import (
     DataType,
     CollectionSchema,
     MilvusException,
+)
+
+from ...models.models import (
+    QueryResult,
+    QueryWithEmbedding,
+    DocumentMetadataFilter,
     DocumentChunkWithScore,
     DocumentChunkMetadata,
     Source,
 )
 
-from ...models.models import QueryResult, QueryWithEmbedding, DocumentMetadataFilter
 from ...datastore.datastore import DataStore
 from ...services.date import to_unix_timestamp
 
