@@ -1,4 +1,4 @@
-from models.models import Document, DocumentMetadataFilter, Query, QueryResult
+from ..models.models import Document, DocumentMetadataFilter, Query, QueryResult
 from pydantic import BaseModel
 from typing import List, Optional
 
