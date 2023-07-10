@@ -7,13 +7,13 @@ class Source(str, Enum):
     email = "email"
     file = "file"
     chat = "chat"
-    
+
 
 class DocumentMetadata(BaseModel):
     source: Optional[Source] = None
     source_id: Optional[str] = None
     url: Optional[str] = None
-    created_at: Optional[str] = None
+    created_at: Optional[int] = None  # TODO: DON testing
     author: Optional[str] = None
 
 
