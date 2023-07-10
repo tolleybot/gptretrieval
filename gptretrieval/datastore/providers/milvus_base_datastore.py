@@ -227,7 +227,7 @@ class MilvusDataStore(DataStore):
 
                 return QueryResult(query=query.query, results=results)
             except Exception as e:
-                print(r"Failed to query, error: {e}")
+                print(f"Failed to query, error: {e}")
                 return QueryResult(query=query.query, results=[])
 
         results: List[QueryResult] = await asyncio.gather(
