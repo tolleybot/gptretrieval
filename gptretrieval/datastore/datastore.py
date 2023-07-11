@@ -12,7 +12,7 @@ from ..services.openai import get_embeddings
 
 
 class DataStore(ABC):
-    async def query(self, queries: List[Query]) -> List[QueryResult]:
+    async def query(self, queries: List[Query], top_k=10) -> List[QueryResult]:
         """
         Takes in a list of queries and filters and returns a list of query results with matching document chunks and scores.
         """
@@ -24,7 +24,7 @@ class DataStore(ABC):
             QueryWithEmbedding(**query.dict(), embedding=embedding)
             for query, embedding in zip(queries, query_embeddings)
         ]
-        return await self._query(queries_with_embeddings)
+        return await self._query(queries_with_embeddings, top_k=top_k)
 
     @abstractmethod
     async def _query(
