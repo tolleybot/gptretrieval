@@ -27,7 +27,9 @@ class DataStore(ABC):
         return await self._query(queries_with_embeddings)
 
     @abstractmethod
-    async def _query(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
+    async def _query(
+        self, queries: List[QueryWithEmbedding], top_k=10
+    ) -> List[QueryResult]:
         """
         Takes in a list of queries with embeddings and filters and returns a list of query results with matching document chunks and scores.
         """
