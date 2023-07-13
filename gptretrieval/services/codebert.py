@@ -24,6 +24,9 @@ def get_embeddings(texts: List[str]) -> List[List[float]]:
     Returns:
         A list of embeddings, each of which is a list of floats.
     """
+    if isinstance(texts, str):
+        texts = [texts]
+
     embeddings = []
     for text in texts:
         # Tokenize the text
