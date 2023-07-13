@@ -41,7 +41,7 @@ def get_embeddings(texts: List[str]) -> List[List[float]]:
         # The embeddings are the average of the token embeddings
         embedding = outputs.last_hidden_state.mean(dim=1).cpu().numpy().tolist()
 
-        embeddings.append(embedding)
+        embeddings.append(embedding[0])
 
     return embeddings
 
