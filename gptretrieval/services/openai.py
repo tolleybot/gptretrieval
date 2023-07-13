@@ -1,7 +1,6 @@
 from typing import List
 import openai
 import os
-import os
 import numpy as np
 
 # set openai key from environment variable or assert
@@ -32,8 +31,8 @@ def get_embeddings(texts: List[str]) -> List[List[float]]:
     data = response["data"]  # type: ignore
 
     # Return the embeddings as a list of lists of floats
-    
-    #return [np.random.rand(1536).tolist() for _ in range(len(texts))]
+
+    # return [np.random.rand(1536).tolist() for _ in range(len(texts))]
     return [result["embedding"] for result in data]
 
 

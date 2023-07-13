@@ -35,6 +35,8 @@ setup(
         "tree_sitter",
         "tree_sitter_languages",
         "arrow",
+        "torch",
+        "transformers",
     ],
     project_urls={  # Optional
         "Bug Reports": "https://github.com/tolleybot/gptretrieval.git/issues",
