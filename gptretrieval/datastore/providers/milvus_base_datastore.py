@@ -108,7 +108,7 @@ class MilvusDataStore(DataStore):
         milvus_index_params: Optional[str] = os.environ.get("MILVUS_INDEX_PARAMS"),
         milvus_search_params: Optional[str] = os.environ.get("MILVUS_SEARCH_PARAMS"),
         upsert_batch_size: int = 20,
-        output_dim: int = int(os.environ.get("OUTPUT_DIM") or 1536),,
+        output_dim: int = int(os.environ.get("OUTPUT_DIM") or 1536),
         embedding_field: str = "embedding",
         schema: List = SCHEMA_V2,
     ):
@@ -144,10 +144,12 @@ class MilvusDataStore(DataStore):
         self.col = None
         self.alias = ""
         self.schema = schema
-         # Adjust schema based on output_dim
+        # Adjust schema based on output_dim
         schema[0] = (
             embedding_field,
-            FieldSchema(name=embedding_field, dtype=DataType.FLOAT_VECTOR, dim=output_dim),
+            FieldSchema(
+                name=embedding_field, dtype=DataType.FLOAT_VECTOR, dim=output_dim
+            ),
             Required,
         )
 
