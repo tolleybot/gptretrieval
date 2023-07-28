@@ -98,7 +98,7 @@ class MilvusDataStore(DataStore):
         create_new: Optional[bool] = False,
         consistency_level: str = os.environ.get("MILVUS_CONSISTENCY_LEVEL", "Bounded"),
         milvus_collection: str = os.environ.get("MILVUS_COLLECTION"),
-        milvus_host: str = os.environ.get("MILVUS_HOST") or "localhost",
+        milvus_host: str = os.environ.get("MILVUS_HOST") or "0.0.0.0",
         milvus_port: int = int(os.environ.get("MILVUS_PORT") or 19530),
         milvus_user: Optional[str] = os.environ.get("MILVUS_USER"),
         milvus_password: Optional[str] = os.environ.get("MILVUS_PASSWORD"),
