@@ -3,7 +3,7 @@ import torch
 from typing import List
 import os
 
-cache_dir = os.getenv("TRANSFORMERS_CACHE")
+model_dir = os.getenv("TRANSFORMERS_MODEL_DIR")
 
 device = torch.device(
     "cuda"
@@ -13,9 +13,9 @@ device = torch.device(
 
 # Load the CodeBERT model and tokenizer
 model_name = "microsoft/codebert-base"
-if cache_dir:
-    tokenizer = RobertaTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
-    model = RobertaModel.from_pretrained(model_name, cache_dir=cache_dir).to(device)
+if model_dir:
+    tokenizer = RobertaTokenizer.from_pretrained(model_dir)
+    model = RobertaModel.from_pretrained(model_dir)
 else:
     tokenizer = RobertaTokenizer.from_pretrained(model_name)
     model = RobertaModel.from_pretrained(model_name).to(device)
