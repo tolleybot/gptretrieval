@@ -1,16 +1,24 @@
 from transformers import RobertaModel, RobertaTokenizer
 import torch
 from typing import List
+import os
 
-# Load the CodeBERT model and tokenizer
-model_name = "microsoft/codebert-base"
-tokenizer = RobertaTokenizer.from_pretrained(model_name)
+cache_dir = os.getenv("TRANSFORMERS_CACHE")
+
 device = torch.device(
     "cuda"
     if torch.cuda.is_available()
     else ("mps" if torch.backends.mps.is_available() else "cpu")
 )
-model = RobertaModel.from_pretrained(model_name).to(device)
+
+# Load the CodeBERT model and tokenizer
+model_name = "microsoft/codebert-base"
+if cache_dir:
+    tokenizer = RobertaTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
+    model = RobertaModel.from_pretrained(model_name, cache_dir=cache_dir).to(device)
+else:
+    tokenizer = RobertaTokenizer.from_pretrained(model_name)
+    model = RobertaModel.from_pretrained(model_name).to(device)
 
 
 def get_embeddings(texts: List[str]) -> List[List[float]]:
