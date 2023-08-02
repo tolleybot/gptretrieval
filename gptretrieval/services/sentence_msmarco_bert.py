@@ -2,6 +2,8 @@ import sentence_transformers
 import torch
 from typing import List
 
+model_dir = os.getenv("TRANSFORMERS_MODEL_DIR")
+
 # Load the CodeBERT model and tokenizer
 model_name = "krlvi/sentence-msmarco-bert-base-dot-v5-nlpl-code_search_net"
 
@@ -10,7 +12,12 @@ device = torch.device(
     if torch.cuda.is_available()
     else ("mps" if torch.backends.mps.is_available() else "cpu")
 )
-model = sentence_transformers.SentenceTransformer(model_name, device=device)
+
+if model_dir:
+    print(f"Loading from local disk {model_dir}")
+    model = sentence_transformers.SentenceTransformer(model_dir, device=device)
+else:
+    model = sentence_transformers.SentenceTransformer(model_name, device=device)
 
 
 def get_embeddings(texts: List[str]) -> List[List[float]]:
