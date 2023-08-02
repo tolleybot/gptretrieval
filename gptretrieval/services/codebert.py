@@ -14,9 +14,11 @@ device = torch.device(
 # Load the CodeBERT model and tokenizer
 model_name = "microsoft/codebert-base"
 if model_dir:
+    print(f"Loading from local disk {model_dir}")
     tokenizer = RobertaTokenizer.from_pretrained(model_dir, local_files_only=True)
     model = RobertaModel.from_pretrained(model_dir, local_files_only=True)
 else:
+    print("Loading from Huggyface")
     tokenizer = RobertaTokenizer.from_pretrained(model_name)
     model = RobertaModel.from_pretrained(model_name).to(device)
 
