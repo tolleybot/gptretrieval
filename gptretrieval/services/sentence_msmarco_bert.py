@@ -1,6 +1,7 @@
 import sentence_transformers
 import torch
 from typing import List
+import os
 
 model_dir = os.getenv("TRANSFORMERS_MODEL_DIR")
 
