@@ -1,7 +1,7 @@
 from typing import List
 import openai
 import os
-import numpy as np
+import json
 
 # set openai key from environment variable or assert
 openai.api_key = os.environ.get("OPENAI_API_KEY")
