@@ -10,6 +10,17 @@ assert openai.api_key is not None, "OPENAI_API_KEY environment variable must be 
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 
 
+def clean_str(message):
+    message = message.replace("\n", "")
+    message = message.replace("\t", "")
+    message = message.replace("\r", "")
+    message = message.replace(" + ", " ")  # Remove + operators with spaces around them
+    message = message.replace("+ ", " ")  # Remove + operators with space after them
+    message = message.replace(" +", " ")  # Remove + operators with space before them
+    message = message.strip()  # Remove any leading or trailing whitespace
+    return message
+
+
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(3))
 def get_embeddings(texts: List[str]) -> List[List[float]]:
     """
@@ -41,6 +52,8 @@ def get_embeddings(texts: List[str]) -> List[List[float]]:
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(3))
 def get_chat_completion(
     messages,
+    functions=None,
+    function_call="auto",
     model="gpt-3.5-turbo",  # use "gpt-4" for better results
 ):
     """
@@ -57,12 +70,35 @@ def get_chat_completion(
         Exception: If the OpenAI API call fails.
     """
     # call the OpenAI chat completion API with the given messages
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=messages,
-    )
+    if functions:
+        response = openai.ChatCompletion.create(
+            model=model,
+            messages=messages,
+            functions=functions,
+            function_call=function_call,  # auto is default, but we'll be explicit
+        )
 
-    choices = response["choices"]  # type: ignore
-    completion = choices[0].message.content.strip()
-    print(f"Completion: {completion}")
-    return completion
+        response_message = response["choices"][0]["message"]
+
+        # Step 2: check if GPT wanted to call a function
+        if response_message.get("function_call"):
+            function_name = response_message["function_call"]["name"]
+            message = response_message["function_call"]["arguments"]
+            message = clean_str(message)
+            function_args = json.loads(message)
+            return {"function_name": function_name, "function_args": function_args}
+        else:
+            raise Exception(
+                "GPT-4 tried to call a function, but no functions were provided"
+            )
+
+    else:
+        response = openai.ChatCompletion.create(
+            model=model,
+            messages=messages,
+        )
+
+        choices = response["choices"]  # type: ignore
+        completion = choices[0].message.content.strip()
+        print(f"Completion: {completion}")
+        return completion
