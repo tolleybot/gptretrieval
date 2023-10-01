@@ -28,32 +28,24 @@ labels_dict = {
         "description": "Code that implements data structures like arrays, linked lists, trees, etc. Does not include general class or struct definitions.",
     },
     5: {
-        "name": "Library or Package Usage",
-        "description": "Code that primarily demonstrates how to use external libraries or packages. Does not include import statements alone.",
-    },
-    6: {
         "name": "Error Handling",
         "description": "Code segments dedicated to handling errors or exceptions.",
     },
-    7: {
+    6: {
         "name": "UI Code",
         "description": "Code related to user interface design and interaction.",
     },
-    8: {
+    7: {
         "name": "Configuration Code",
         "description": "Code used for configuring the system, application, or environment.",
     },
-    9: {
+    8: {
         "name": "Documentation",
         "description": "Comments and documentation that explain the code. Does not include code itself.",
     },
-    10: {
-        "name": "Import Statements",
-        "description": "Lines of code that import libraries and packages. Only includes the import statements, not the usage of the libraries.",
-    },
-    11: {
+    9: {
         "name": "Initialization Code",
-        "description": "Code that initializes variables, objects, or the environment. Does not include class or struct definitions.",
+        "description": "Code that initializes variables, objects, imports, or the environment. Does not include class or struct definitions.",
     },
 }
 
@@ -134,20 +126,6 @@ test_cases = {
             "answer": (9, 9),  # Documentation for both question and code
         }
     ],
-    10: [
-        {
-            "question": "How do you import libraries in Python?",
-            "code": "import math\nfrom datetime import datetime",
-            "answer": (10, 10),  # Import Statements for both question and code
-        }
-    ],
-    11: [
-        {
-            "question": "Can you show an example of variable initialization?",
-            "code": "x = 10\nname = 'John'",
-            "answer": (11, 11),  # Initialization Code for both question and code
-        }
-    ],
 }
 
 
@@ -188,17 +166,17 @@ def classify_code_and_question(question: str, code: str, labels: str):
     functions = [
         {
             "name": "classify_code_and_question",
-            "description": "Classifies the given question and code snippet into predefined labels.",
+            "description": "A function which takes in the index of a question and code label",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "question_label": {
                         "type": "string",
-                        "description": "The label assigned to the question based on predefined classification criteria.",
+                        "description": "The label index assigned to the question",
                     },
                     "code_label": {
                         "type": "string",
-                        "description": "The label assigned to the code snippet based on predefined classification criteria.",
+                        "description": "The label index assigned to the code snippet",
                     },
                 },
                 "required": ["question_label", "code_label"],
@@ -227,9 +205,23 @@ def main():
             # print question and code, and what the answer is supposed to be
             print(f"Question: {case['question']}")
             print(f"Code: {case['code']}")
-            print(f"Answer: {case['answer']}")
-            # print the GPT response
-            print(f"GPT Response: {gpt_response}\n")
+
+            # Retrieve the human-readable label names using the indices in case['answer']
+            question_label = labels_dict[case["answer"][0]]["name"]
+            code_label = labels_dict[case["answer"][1]]["name"]
+            print(f"Expected Answer: Question - {question_label}, Code - {code_label}")
+
+            # Assuming gpt_response contains the indices of the predicted labels
+            # You might need to adjust this part based on the actual structure of gpt_response
+            predicted_question_label = labels_dict[
+                int(gpt_response["function_args"]["question_label"])
+            ]["name"]
+            predicted_code_label = labels_dict[
+                int(gpt_response["function_args"]["code_label"])
+            ]["name"]
+            print(
+                f"GPT Response: Question - {predicted_question_label}, Code - {predicted_code_label}\n"
+            )
 
 
 if __name__ == "__main__":
