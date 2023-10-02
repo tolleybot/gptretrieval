@@ -20,12 +20,12 @@ labels_dict = {
         "description": "Examples of how to use certain code, functions, or classes. Distinct from the actual definition of functions or classes.",
     },
     3: {
-        "name": "Algorithm Implementation",
-        "description": "Code that implements a specific algorithm. Distinct from general function or method definitions, representing a complete or partial algorithm.",
+        "name": "Instructional Code Implementation",
+        "description": "How to implement or use code.  Such as how do I create a function to do ABC, or how is a class used to do XYZ.",
     },
     4: {
-        "name": "Data Structure Implementation",
-        "description": "Code that implements data structures like arrays, linked lists, trees, etc. Does not include general class or struct definitions.",
+        "name": "Database Implementation",
+        "description": "Code that implements or calls a database.",
     },
     5: {
         "name": "Error Handling",
@@ -44,8 +44,12 @@ labels_dict = {
         "description": "Comments and documentation that explain the code. Does not include code itself.",
     },
     9: {
-        "name": "Initialization Code",
-        "description": "Code that initializes variables, objects, imports, or the environment. Does not include class or struct definitions.",
+        "name": "REST API Implementation or Usage",
+        "description": "Code that either implements a server or client, or calls a REST API.",
+    },
+    10: {
+        "name": "Code Usage Search",
+        "description": "Looking for location and or file where a specific function or class or variable is being used",
     },
 }
 
@@ -126,6 +130,41 @@ test_cases = {
             "answer": (9, 9),  # Documentation for both question and code
         }
     ],
+    10: [
+        {
+            "question": "How do you set up a configuration file for logging in Python?",
+            "code": "class ABC",
+            "answer": (8, 8),  # Configuration Code for both question and code
+        }
+    ],
+    11: [
+        {
+            "question": "What is the purpose of documentation in code?",
+            "code": "def add_let(a, b):\n  return 'abc' + 'b'",
+            "answer": (9, 9),  # Documentation for both question and code
+        }
+    ],
+    12: [
+        {
+            "question": "Where in the code base is the class ABC?",
+            "code": "line 123 in file.py",
+            "answer": (9, 9),  # Documentation for both question and code
+        }
+    ],
+    13: [
+        {
+            "question": "show me the definition for class ABC?",
+            "code": "line 123 of file abciscool.py\ndef testit(): \n  x = ABC()\n print(x)",
+            "answer": (9, 9),  # Documentation for both question and code
+        }
+    ],
+    13: [
+        {
+            "question": "show me the definition for class ABC?",
+            "code": "class ABC\n self.x = 1",
+            "answer": (9, 9),  # Documentation for both question and code
+        }
+    ],
 }
 
 
@@ -139,47 +178,43 @@ def create_prompt_for_gpt(labels_dict):
     Returns:
     str: A text block suitable for use as a GPT prompt.
     """
-    prompt = "The following are the labels and their descriptions:\n\n"
+    prompt = "The following are example labels but are not exclusive:\n\n"
     for index, label_info in labels_dict.items():
-        prompt += f"Label {index} - {label_info['name']}:\n"
+        prompt += f"Label - {label_info['name']}:\n"
         prompt += f"{label_info['description']}\n\n"
     return prompt
 
 
-def classify_code_and_question(question: str, code: str, labels: str):
+def classify_question(question: str, labels: str):
     """Call OpenAI and summarize the function or class definition"""
 
     prompt_text = create_prompt_for_gpt(labels_dict)
-    code = code[:GPT_TOKEN_LENGTH]
+    question = question[:GPT_TOKEN_LENGTH]
 
     system_message = {
         "role": "system",
-        "content": f"{prompt_text}\nYou can ask me to classify a question and a code snippet, \
-            and I will return a label for the question and the code formatted as json. \
-            formatted as {{'question': 'label', 'code': 'label'}}",
+        "content": f"{prompt_text}\nYou can ask me to classify a question, \
+            and I will return a label for the question formatted as json. \
+            formatted as {{'question': 'label']}}",
     }
     user_message = {
         "role": "user",
-        "content": f"Classify the following: Question - {question}, Code - {code}",
+        "content": f"Classify the following: Question - {question}",
     }
 
     functions = [
         {
-            "name": "classify_code_and_question",
-            "description": "A function which takes in the index of a question and code label",
+            "name": "classify_question",
+            "description": "A function which takes in the label for question",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "question_label": {
                         "type": "string",
                         "description": "The label index assigned to the question",
-                    },
-                    "code_label": {
-                        "type": "string",
-                        "description": "The label index assigned to the code snippet",
-                    },
+                    }
                 },
-                "required": ["question_label", "code_label"],
+                "required": ["question_label"],
             },
         }
     ]
@@ -187,7 +222,74 @@ def classify_code_and_question(question: str, code: str, labels: str):
     resp = openai.get_chat_completion(
         [system_message, user_message],
         functions,
-        function_call={"name": "classify_code_and_question"},
+        function_call={"name": "classify_question"},
+        model="gpt-4",
+    )
+
+    return resp
+
+
+def classify_code(code: str, question: str, question_label: str):
+    """
+    Call OpenAI to generate potential code labels based on the question and question label.
+
+    Parameters:
+    code (str): The code snippet.
+    question (str): The question text.
+    question_label (str): The label assigned to the question.
+
+    Returns:
+    Response from OpenAI API.
+    """
+    # Craft the system message with the labels dictionary and instruction
+    prompt_text = create_prompt_for_gpt(labels_dict)
+    code = code[:GPT_TOKEN_LENGTH]
+
+    system_message = {
+        "role": "system",
+        "content": f"Given a question and its classification, you can ask me to classify a code snippet. \
+            The classification of the code snippet should take its context or meaning from the question and its classification. \
+                The classification of the code snippet can be either '1' which means its 'Relevant' indicating the code snippet is relevant to the question, \
+                     else its '0', which means its Irelevant.",
+    }
+
+    system_message = {
+        "role": "system",
+        "content": f"{prompt_text}\nGiven a question and its classification, you can ask me to classify a code snippet. \
+            The classification of the code snippet is '1' if it should align with the context provided by the question and its classification else its 0. \
+                Think of the code classification as the role the code plays in the context of answering the classified question. \
+                    For example, if the question is asking for a class definition, but the code snippet is using a class without \
+                        defining it, the code snippet should be classified as '0' or irrelevant.",
+    }
+
+    user_message = {
+        "role": "user",
+        "content": f"The question is: '{question}'. It is classified as: '{question_label}'. Given this context, how would you classify the following code snippet: {code}?",
+    }
+
+    # Define the function for the API call
+    functions = [
+        {
+            "name": "classify_code",
+            "description": "A function which takes in a code label",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "code_label": {
+                        "type": "integer",
+                        "description": "The label for the code",
+                    }
+                },
+                "required": ["code_label"],
+            },
+        }
+    ]
+
+    # Make the API call to GPT-4 with the crafted messages and function
+    resp = openai.get_chat_completion(
+        [system_message, user_message],
+        functions,
+        function_call={"name": "classify_code"},
         model="gpt-4",
     )
 
@@ -199,26 +301,25 @@ def main():
     # print the summary for each test case
     for label, test_case in test_cases.items():
         for case in test_case:
-            gpt_response = classify_code_and_question(
-                case["question"], case["code"], labels_dict
-            )
+            gpt_question_response = classify_question(case["question"], labels_dict)
             # print question and code, and what the answer is supposed to be
+            print("--------------------------------")
             print(f"Question: {case['question']}")
             print(f"Code: {case['code']}")
-
-            # Retrieve the human-readable label names using the indices in case['answer']
-            question_label = labels_dict[case["answer"][0]]["name"]
-            code_label = labels_dict[case["answer"][1]]["name"]
-            print(f"Expected Answer: Question - {question_label}, Code - {code_label}")
+            print("--------------------------------")
 
             # Assuming gpt_response contains the indices of the predicted labels
             # You might need to adjust this part based on the actual structure of gpt_response
-            predicted_question_label = labels_dict[
-                int(gpt_response["function_args"]["question_label"])
-            ]["name"]
-            predicted_code_label = labels_dict[
-                int(gpt_response["function_args"]["code_label"])
-            ]["name"]
+            predicted_question_label = gpt_question_response["function_args"][
+                "question_label"
+            ]
+
+            gpt_code_response = classify_code(
+                case["code"], case["question"], predicted_question_label
+            )
+
+            predicted_code_label = gpt_code_response["function_args"]["code_label"]
+
             print(
                 f"GPT Response: Question - {predicted_question_label}, Code - {predicted_code_label}\n"
             )
