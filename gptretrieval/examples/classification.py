@@ -161,7 +161,14 @@ test_cases = {
     13: [
         {
             "question": "show me the definition for class ABC?",
-            "code": "class ABC\n self.x = 1",
+            "code": "line 123 of file abciscool.py\nclass ABC\n self.x = 1",
+            "answer": (9, 9),  # Documentation for both question and code
+        }
+    ],
+    14: [
+        {
+            "question": "what file and line is class ABC defined?",
+            "code": "line 123 of file abciscool.py\nclass ABC\n self.x = 1",
             "answer": (9, 9),  # Documentation for both question and code
         }
     ],
