@@ -5,6 +5,7 @@ sys.path.append("/Users/dtolley/Documents/Projects/gptretrieval/gptretrieval")
 from services import openai
 
 GPT_TOKEN_LENGTH = 4096
+GPT_MODEL = "gpt-4"
 
 labels_dict = {
     0: {
@@ -172,6 +173,13 @@ test_cases = {
             "answer": (9, 9),  # Documentation for both question and code
         }
     ],
+    15: [
+        {
+            "question": "show me the definition for class ABC?",
+            "code": "line 123 of file abciscool.py\nclass BA\n self.x = 1",
+            "answer": (9, 9),  # Documentation for both question and code
+        }
+    ],
 }
 
 
@@ -230,7 +238,7 @@ def classify_question(question: str, labels: str):
         [system_message, user_message],
         functions,
         function_call={"name": "classify_question"},
-        model="gpt-4",
+        model=GPT_MODEL,
     )
 
     return resp
@@ -297,7 +305,7 @@ def classify_code(code: str, question: str, question_label: str):
         [system_message, user_message],
         functions,
         function_call={"name": "classify_code"},
-        model="gpt-4",
+        model=GPT_MODEL,
     )
 
     return resp
