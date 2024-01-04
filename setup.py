@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="gptretrieval",  # Required
-    version="1.0.0",  # Required
+    version="1.0.2",  # Required
     url="https://github.com/tolleybot/gptretrieval.git",  # Optional
     author="Don Tolley",  # Optional
     author_email="tolleybot@gmai.com",  # Optional

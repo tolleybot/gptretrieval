@@ -133,14 +133,6 @@ def classify_code(code: str, question: str, question_label: str, token_length=40
 
     system_message = {
         "role": "system",
-        "content": f"Given a question and its classification, you can ask me to classify a code snippet. \
-            The classification of the code snippet should take its context or meaning from the question and its classification. \
-                The classification of the code snippet can be either '1' which means its 'Relevant' indicating the code snippet is relevant to the question, \
-                     else its '0', which means its Irelevant.",
-    }
-
-    system_message = {
-        "role": "system",
         "content": f"{prompt_text}\nGiven a question and its classification, you can ask me to classify a code snippet. \
             The classification of the code snippet is '1' if it should align with the context provided by the question and its classification else its 0. \
                 Think of the code classification as the role the code plays in the context of answering the classified question. \
