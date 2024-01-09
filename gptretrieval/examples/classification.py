@@ -1,8 +1,8 @@
 import json
 import sys
 
-sys.path.append("/Users/dtolley/Documents/Projects/gptretrieval/gptretrieval")
-from services import openai
+sys.path.append("/Users/dtolley/Documents/Projects/gptretrieval")
+from gptretrieval.services import openai
 
 GPT_TOKEN_LENGTH = 4096
 GPT_MODEL = "gpt-4"
@@ -217,27 +217,30 @@ def classify_question(question: str, labels: str):
         "content": f"Classify the following: Question - {question}",
     }
 
-    functions = [
+    tools = [
         {
-            "name": "classify_question",
-            "description": "A function which takes in the label for question",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "question_label": {
-                        "type": "string",
-                        "description": "The label index assigned to the question",
-                    }
+            "type": "function",
+            "function": {
+                "name": "classify_question",
+                "description": "A function which takes in the label for question",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "question_label": {
+                            "type": "string",
+                            "description": "The label index assigned to the question",
+                        }
+                    },
+                    "required": ["question_label"],
                 },
-                "required": ["question_label"],
             },
         }
     ]
 
     resp = openai.get_chat_completion(
-        [system_message, user_message],
-        functions,
-        function_call={"name": "classify_question"},
+        messages=[system_message, user_message],
+        tools=tools,
+        tool_choice="auto",  # Auto-select the tool
         model=GPT_MODEL,
     )
 
@@ -275,28 +278,31 @@ def classify_code(code: str, question: str, question_label: str):
     }
 
     # Define the function for the API call
-    functions = [
+    tools = [
         {
-            "name": "classify_code",
-            "description": "A function which takes in a code label",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "code_label": {
-                        "type": "integer",
-                        "description": "The label for the code",
-                    }
+            "type": "function",
+            "function": {
+                "name": "classify_code",
+                "description": "A function which takes in a code label",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "code_label": {
+                            "type": "integer",
+                            "description": "The label for the code",
+                        }
+                    },
+                    "required": ["code_label"],
                 },
-                "required": ["code_label"],
             },
         }
     ]
 
     # Make the API call to GPT-4 with the crafted messages and function
     resp = openai.get_chat_completion(
-        [system_message, user_message],
-        functions,
-        function_call={"name": "classify_code"},
+        messages=[system_message, user_message],
+        tools=tools,
+        tool_choice="auto",  # Auto-select the tool
         model=GPT_MODEL,
     )
 
@@ -305,6 +311,10 @@ def classify_code(code: str, question: str, question_label: str):
 
 # create a main entry point
 def main():
+    # Test get_embeddings function
+    texts = ["Hello world!", "How are you?"]
+    embeddings = openai.get_embeddings(texts)
+    print(f"Embeddings: {embeddings}")
     # print the summary for each test case
     for label, test_case in test_cases.items():
         for case in test_case:
