@@ -241,8 +241,10 @@ class MilvusDataStore(DataStore):
             *[_single_query(query) for query in queries]
         )
         return results
-    
-    def _query_synch(self, queries: List[QueryWithEmbedding], top_k: int = None) -> List[QueryResult]:
+
+    def _query_synch(
+        self, queries: List[QueryWithEmbedding], top_k: int = None
+    ) -> List[QueryResult]:
         """A sychnronous vresion of _query. Query the QueryWithEmbedding against the MilvusDocumentSearch
 
         Search the embedding and its filter in the collection.
@@ -273,7 +275,10 @@ class MilvusDataStore(DataStore):
                 results = []
                 for hit in res[0]:
                     score = hit.score
-                    metadata = {x: hit.entity.get(x) for x in [field[0] for field in self._get_schema()[1:]]}
+                    metadata = {
+                        x: hit.entity.get(x)
+                        for x in [field[0] for field in self._get_schema()[1:]]
+                    }
                     if metadata["source"] not in Source.__members__:
                         metadata["source"] = None
                     text = metadata.pop("text")
@@ -289,8 +294,8 @@ class MilvusDataStore(DataStore):
                 return QueryResult(query=query.query, results=results)
             except Exception as e:
                 print(f"Failed to query, error: {e}")
-                return QueryResult(query=query.query, results=[]
-                                   
+                return QueryResult(query=query.query, results=[])
+
         results = []
         for query in queries:
             result = _single_query(query)
