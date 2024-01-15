@@ -73,7 +73,7 @@ def create_prompt_for_gpt(labels_dict):
 prompt_text = create_prompt_for_gpt(labels_dict)
 
 
-def classify_question(question: str, labels: str, token_length=4096):
+def classify_question(question: str, token_length=4096):
     """Call OpenAI and summarize the function or class definition"""
 
     question = question[:token_length]
