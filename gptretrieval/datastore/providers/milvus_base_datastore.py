@@ -241,6 +241,62 @@ class MilvusDataStore(DataStore):
             *[_single_query(query) for query in queries]
         )
         return results
+    
+    def _query_synch(self, queries: List[QueryWithEmbedding], top_k: int = None) -> List[QueryResult]:
+        """A sychnronous vresion of _query. Query the QueryWithEmbedding against the MilvusDocumentSearch
+
+        Search the embedding and its filter in the collection.
+
+        Args:
+            queries (List[QueryWithEmbedding]): The list of searches to perform.
+
+        Returns:
+            List[QueryResult]: Results for each search.
+        """
+
+        def _single_query(query: QueryWithEmbedding) -> QueryResult:
+            try:
+                filter = None
+                if query.filter is not None:
+                    filter = self._get_filter(query.filter)
+
+                top_k_ = query.top_k if top_k is None else top_k
+                res = self.col.search(
+                    data=[query.embedding],
+                    anns_field=EMBEDDING_FIELD,
+                    param=self.search_params,
+                    limit=top_k_,
+                    expr=filter,
+                    output_fields=[field[0] for field in self._get_schema()[1:]],
+                )
+
+                results = []
+                for hit in res[0]:
+                    score = hit.score
+                    metadata = {x: hit.entity.get(x) for x in [field[0] for field in self._get_schema()[1:]]}
+                    if metadata["source"] not in Source.__members__:
+                        metadata["source"] = None
+                    text = metadata.pop("text")
+                    ids = metadata.pop("id")
+                    chunk = DocumentChunkWithScore(
+                        id=ids,
+                        score=score,
+                        text=text,
+                        metadata=DocumentChunkMetadata(**metadata),
+                    )
+                    results.append(chunk)
+
+                return QueryResult(query=query.query, results=results)
+            except Exception as e:
+                print(f"Failed to query, error: {e}")
+                return QueryResult(query=query.query, results=[]
+                                   
+        results = []
+        for query in queries:
+            result = _single_query(query)
+            results.append(result)
+
+        return results
 
     def _get_filter(self, filter: DocumentMetadataFilter) -> Optional[str]:
         """Converts a DocumentMetdataFilter to the expression that Milvus takes.
