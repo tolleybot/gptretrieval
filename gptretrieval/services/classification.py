@@ -73,26 +73,24 @@ def create_prompt_for_gpt(labels_dict):
 prompt_text = create_prompt_for_gpt(labels_dict)
 
 
-def classify_question(question: str, token_length=4096):
-    """Call OpenAI and summarize the function or class definition"""
-
+def classify_question(question: str, model=GPT_MODEL, token_length=4096):
+    """Call OpenAI to classify the given question."""
     question = question[:token_length]
 
-    system_message = {
-        "role": "system",
-        "content": f"{prompt_text}\nYou can ask me to classify a question, \
-            and I will return a label for the question formatted as json. \
-            formatted as {{'question': 'label']}}",
-    }
-    user_message = {
-        "role": "user",
-        "content": f"Classify the following: Question - {question}",
-    }
+    messages = [
+        {
+            "role": "system",
+            "content": prompt_text
+            + "\nYou can ask me to classify a question, and I will return a label for the question formatted as json. ",
+        },
+        {"role": "user", "content": f"Classify the following: Question - {question}"},
+    ]
 
+    # Define the function for the API call
     functions = [
         {
             "name": "classify_question",
-            "description": "A function which takes in the label for question",
+            "description": "A function which takes in a question and classifies it",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -106,44 +104,30 @@ def classify_question(question: str, token_length=4096):
         }
     ]
 
-    resp = openai.get_chat_completion(
-        [system_message, user_message],
-        functions,
-        function_call={"name": "classify_question"},
-        model=GPT_MODEL,
+    return openai.get_chat_completion(
+        messages, functions, function_call={"name": "classify_question"}, model=model
     )
 
-    return resp
 
-
-def classify_code(code: str, question: str, question_label: str, token_length=4096):
+def classify_code(
+    code: str, question: str, question_label: str, model=GPT_MODEL, token_length=4096
+):
     """
     Call OpenAI to generate potential code labels based on the question and question label.
-
-    Parameters:
-    code (str): The code snippet.
-    question (str): The question text.
-    question_label (str): The label assigned to the question.
-
-    Returns:
-    Response from OpenAI API.
     """
-    # Craft the system message with the labels dictionary and instruction
     code = code[:token_length]
 
-    system_message = {
-        "role": "system",
-        "content": f"{prompt_text}\nGiven a question and its classification, you can ask me to classify a code snippet. \
-            The classification of the code snippet is '1' if it should align with the context provided by the question and its classification else its 0. \
-                Think of the code classification as the role the code plays in the context of answering the classified question. \
-                    For example, if the question is asking for a class definition, but the code snippet is using a class without \
-                        defining it, the code snippet should be classified as '0' or irrelevant.",
-    }
-
-    user_message = {
-        "role": "user",
-        "content": f"The question is: '{question}'. It is classified as: '{question_label}'. Given this context, how would you classify the following code snippet: {code}?",
-    }
+    messages = [
+        {
+            "role": "system",
+            "content": prompt_text
+            + "\nGiven a question and its classification, you can ask me to classify a code snippet. ",
+        },
+        {
+            "role": "user",
+            "content": f"The question is: '{question}'. It is classified as: '{question_label}'. Given this context, how would you classify the following code snippet: {code}?",
+        },
+    ]
 
     # Define the function for the API call
     functions = [
@@ -163,12 +147,6 @@ def classify_code(code: str, question: str, question_label: str, token_length=40
         }
     ]
 
-    # Make the API call to GPT-4 with the crafted messages and function
-    resp = openai.get_chat_completion(
-        [system_message, user_message],
-        functions,
-        function_call={"name": "classify_code"},
-        model=GPT_MODEL,
+    return openai.get_chat_completion(
+        messages, functions, function_call={"name": "classify_code"}, model=model
     )
-
-    return resp
