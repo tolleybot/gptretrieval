@@ -87,26 +87,27 @@ def classify_question(question: str, model=GPT_MODEL, token_length=4096):
     ]
 
     # Define the function for the API call
-    functions = [
+    tools = [
         {
-            "name": "classify_question",
-            "description": "A function which takes in a question and classifies it",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "question_label": {
-                        "type": "string",
-                        "description": "The label index assigned to the question",
-                    }
+            "type": "function",
+            "function": {
+                "name": "classify_question",
+                "description": "A function which takes in a question and classifies it",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "question_label": {
+                            "type": "string",
+                            "description": "The label index assigned to the question",
+                        }
+                    },
+                    "required": ["question_label"],
                 },
-                "required": ["question_label"],
             },
         }
     ]
 
-    return openai.get_chat_completion(
-        messages, functions, function_call={"name": "classify_question"}, model=model
-    )
+    return openai.get_chat_completion(messages, tools=tools, model=model)
 
 
 def classify_code(
@@ -130,23 +131,24 @@ def classify_code(
     ]
 
     # Define the function for the API call
-    functions = [
+    tools = [
         {
-            "name": "classify_code",
-            "description": "A function which takes in a code label",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "code_label": {
-                        "type": "integer",
-                        "description": "The label for the code",
-                    }
+            "type": "function",
+            "function": {
+                "name": "classify_code",
+                "description": "A function which takes in a code label",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "code_label": {
+                            "type": "integer",
+                            "description": "The label for the code",
+                        }
+                    },
+                    "required": ["code_label"],
                 },
-                "required": ["code_label"],
             },
         }
     ]
 
-    return openai.get_chat_completion(
-        messages, functions, function_call={"name": "classify_code"}, model=model
-    )
+    return openai.get_chat_completion(messages, tools=tools, model=model)
