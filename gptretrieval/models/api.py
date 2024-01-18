@@ -16,7 +16,9 @@ class QueryRequest(BaseModel):
 
 
 class QueryResponse(BaseModel):
-    results: List[QueryResult]
+    state: str
+    result: Optional[List[QueryResult]] = None
+    error: Optional[str] = None
 
 
 class DeleteRequest(BaseModel):
