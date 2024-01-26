@@ -5,6 +5,8 @@ import json
 
 client = OpenAI(api_key=os.environ.get("client_API_KEY"))
 assert client.api_key is not None, "client_API_KEY environment variable must be set"
+# get gpt model env variable, or set default
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-ada-002")
 
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 
@@ -37,7 +39,7 @@ def get_embeddings(texts: List[str]) -> List[List[float]]:
     if isinstance(texts, str):
         texts = [texts]
     # Call the client API to get the embeddings
-    response = client.embeddings.create(input=texts, model="text-embedding-ada-002")
+    response = client.embeddings.create(input=texts, model=EMBEDDING_MODEL)
 
     # Extract the embedding data from the response
     data = response.data  # type: ignore
