@@ -2,6 +2,7 @@ from typing import List
 from openai import OpenAI, OpenAIError
 import os
 import json
+import re
 
 client = OpenAI(api_key=os.environ.get("client_API_KEY"))
 assert client.api_key is not None, "client_API_KEY environment variable must be set"
@@ -12,13 +13,17 @@ from tenacity import retry, wait_random_exponential, stop_after_attempt
 
 
 def clean_str(message):
-    message = message.replace("\n", "")
-    message = message.replace("\t", "")
-    message = message.replace("\r", "")
-    message = message.replace(" + ", " ")  # Remove + operators with spaces around them
-    message = message.replace("+ ", " ")  # Remove + operators with space after them
-    message = message.replace(" +", " ")  # Remove + operators with space before them
-    message = message.strip()  # Remove any leading or trailing whitespace
+    # Preserving line breaks but removing extra whitespace from each line
+    lines = message.split("\n")
+    cleaned_lines = [line.strip() for line in lines]
+
+    message = " ".join(cleaned_lines)  # Rejoining the lines with a space
+    message = message.replace("\t", " ")  # Replacing tabs with a single space
+    # Handling plus signs as before
+    message = message.replace(" + ", " ")
+    message = message.replace("+ ", " ")
+    message = message.replace(" +", " ")
+    message = re.sub(r"\s+", " ", message).strip()  # Normalizing whitespace
     return message
 
 
