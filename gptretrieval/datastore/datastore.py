@@ -45,7 +45,9 @@ class DataStore(ABC):
             )
             for query, embedding in zip(queries, query_embeddings)
         ]
-        return self._query_synch(queries_with_embeddings, top_k=top_k)
+        return self._query_synch(
+            queries_with_embeddings, top_k=top_k, partitions=partitions
+        )
 
     @abstractmethod
     async def _query(
@@ -57,7 +59,7 @@ class DataStore(ABC):
         raise NotImplementedError
 
     def _query_synch(
-        self, queries: List[QueryWithEmbedding], top_k=10
+        self, queries: List[QueryWithEmbedding], top_k=10, partitions: List[str] = None
     ) -> List[QueryResult]:
         """
         A synchronous version of query Takes in a list of queries with embeddings and filters and returns a list of query results with matching document chunks and scores.
