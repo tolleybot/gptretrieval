@@ -175,6 +175,7 @@ class MilvusDataStore(DataStore):
         self,
         queries: List[QueryWithEmbedding],
         top_k: int = None,
+        partitions: List[str] = None,
     ) -> List[QueryResult]:
         """Query the QueryWithEmbedding against the MilvusDocumentSearch
 
@@ -188,7 +189,9 @@ class MilvusDataStore(DataStore):
         """
 
         # Async to perform the query, adapted from pinecone implementation
-        async def _single_query(query: QueryWithEmbedding) -> QueryResult:
+        async def _single_query(
+            query: QueryWithEmbedding, partitions: List[str] = None
+        ) -> QueryResult:
             try:
                 filter = None
                 # Set the filter to expression that is valid for Milvus
@@ -240,12 +243,15 @@ class MilvusDataStore(DataStore):
                 return QueryResult(query=query.query, results=[])
 
         results: List[QueryResult] = await asyncio.gather(
-            *[_single_query(query) for query in queries]
+            *[_single_query(query, partitions) for query in queries]
         )
         return results
 
     def _query_synch(
-        self, queries: List[QueryWithEmbedding], top_k: int = None
+        self,
+        queries: List[QueryWithEmbedding],
+        top_k: int = None,
+        partitions: List[str] = None,
     ) -> List[QueryResult]:
         """A sychnronous vresion of _query. Query the QueryWithEmbedding against the MilvusDocumentSearch
 
@@ -258,7 +264,9 @@ class MilvusDataStore(DataStore):
             List[QueryResult]: Results for each search.
         """
 
-        def _single_query(query: QueryWithEmbedding) -> QueryResult:
+        def _single_query(
+            query: QueryWithEmbedding, partitions: List[str] = None
+        ) -> QueryResult:
             try:
                 filter = None
                 if query.filter is not None:
@@ -300,7 +308,7 @@ class MilvusDataStore(DataStore):
 
         results = []
         for query in queries:
-            result = _single_query(query)
+            result = _single_query(query, partitions=partitions)
             results.append(result)
 
         return results

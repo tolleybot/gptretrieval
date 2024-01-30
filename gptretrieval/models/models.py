@@ -59,7 +59,6 @@ class Query(BaseModel):
 
 class QueryWithEmbedding(Query):
     embedding: List[float]
-    partitions: Optional[List[str]] = None
 
 
 class QueryResult(BaseModel):
