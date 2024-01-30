@@ -8,7 +8,7 @@ try:
     client = OpenAI(api_key=os.environ.get("client_API_KEY"))
     assert client.api_key is not None, "client_API_KEY environment variable must be set"
     # get gpt model env variable, or set default
-    EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-ada-002")
+    EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
 except OpenAIError as e:
     print("Error: {}".format(e))
 

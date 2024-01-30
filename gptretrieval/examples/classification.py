@@ -3,6 +3,7 @@ import sys
 
 sys.path.append("/Users/dtolley/Documents/Projects/gptretrieval")
 from gptretrieval.services import openai
+from typing import List
 
 GPT_TOKEN_LENGTH = 4096
 GPT_MODEL = "gpt-4"
@@ -309,37 +310,124 @@ def classify_code(code: str, question: str, question_label: str):
     return resp
 
 
+def select_partition(
+    question: str, partitions: List[str], model=GPT_MODEL, token_length=4096
+):
+    """
+    Call OpenAI to determine the database partition to use given the question
+    Partitions format example:
+        {
+        "cpp": {"name": "cppcode", "description": "C++ code"},
+        "python": {"name": "pythoncode", "description": "Python code"},
+        "docs": {"name": "docs", "description": "Documentation"},
+        "cython": {"name": "cythoncode", "description": "Cython code"}
+        }
+
+        type : { name of partition , description of partition}
+        the type is what is used by tree sitter to parse the code so we do not need to worry about that
+    """
+    question = question[:token_length]
+
+    partition_text = "The following are the partitions available.\n"
+    for _, value in partitions.items():
+        partition_text += f"Partition Name: {value['name']}, Partition Description: {value['description']}\n"
+    partition_text += (
+        f"Partition Name: all, Partition Description: Search all partitions\n"
+    )
+
+    messages = [
+        {
+            "role": "system",
+            "content": partition_text
+            + f"\nGiven a question determine which database partitions to look for knowledge in. You can specify more than one",
+        },
+        {
+            "role": "user",
+            "content": f"The question is: '{question}'. Given this context, which partitions should I look in?",
+        },
+    ]
+
+    # Define the function for the API call
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "select_partition",
+                "description": "A function which takes in a array of partition names",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "partitions": {
+                            "type": "array",
+                            "description": "The name of each partition to use for the query",
+                            "items": {"type": "string"},
+                        }
+                    },
+                    "required": ["partitions"],
+                },
+            },
+        }
+    ]
+
+    return openai.get_chat_completion(
+        messages,
+        tools=tools,
+        tool_choice={"type": "function", "function": {"name": "select_partition"}},
+        model=model,
+    )
+
+
 # create a main entry point
 def main():
     # Test get_embeddings function
-    texts = ["Hello world!", "How are you?"]
-    embeddings = openai.get_embeddings(texts)
-    print(f"Embeddings: {embeddings}")
-    # print the summary for each test case
-    for label, test_case in test_cases.items():
-        for case in test_case:
-            gpt_question_response = classify_question(case["question"], labels_dict)
-            # print question and code, and what the answer is supposed to be
-            print("--------------------------------")
-            print(f"Question: {case['question']}")
-            print(f"Code: {case['code']}")
-            print("--------------------------------")
+    if 0:
+        texts = ["Hello world!", "How are you?"]
+        embeddings = openai.get_embeddings(texts)
+        print(f"Embeddings: {embeddings}")
+        # print the summary for each test case
+        for label, test_case in test_cases.items():
+            for case in test_case:
+                gpt_question_response = classify_question(case["question"], labels_dict)
+                # print question and code, and what the answer is supposed to be
+                print("--------------------------------")
+                print(f"Question: {case['question']}")
+                print(f"Code: {case['code']}")
+                print("--------------------------------")
 
-            # Assuming gpt_response contains the indices of the predicted labels
-            # You might need to adjust this part based on the actual structure of gpt_response
-            predicted_question_label = gpt_question_response["function_args"][
-                "question_label"
-            ]
+                # Assuming gpt_response contains the indices of the predicted labels
+                # You might need to adjust this part based on the actual structure of gpt_response
+                predicted_question_label = gpt_question_response["function_args"][
+                    "question_label"
+                ]
 
-            gpt_code_response = classify_code(
-                case["code"], case["question"], predicted_question_label
-            )
+                gpt_code_response = classify_code(
+                    case["code"], case["question"], predicted_question_label
+                )
 
-            predicted_code_label = gpt_code_response["function_args"]["code_label"]
+                predicted_code_label = gpt_code_response["function_args"]["code_label"]
 
-            print(
-                f"GPT Response: Question - {predicted_question_label}, Code - {predicted_code_label}\n"
-            )
+                print(
+                    f"GPT Response: Question - {predicted_question_label}, Code - {predicted_code_label}\n"
+                )
+
+    partitions = {
+        "cpp": {"name": "cppcode", "description": "C++ code"},
+        "python": {"name": "pythoncode", "description": "Python code"},
+        "docs": {"name": "docs", "description": "Documentation"},
+        "cython": {"name": "cythoncode", "description": "Cython code"},
+    }
+    # Test get_embeddings function
+    texts = [
+        "Tell me about adding numbers with python",
+        "How do you sum numbers in C++?",
+        "In java whats the way to add numbers?",
+    ]
+
+    for question in texts:
+        resp = select_partition(question, partitions)
+        print(question)
+        print("-------------------")
+        print(resp)
 
 
 if __name__ == "__main__":

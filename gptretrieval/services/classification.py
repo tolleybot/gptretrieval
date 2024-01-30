@@ -1,5 +1,6 @@
 import os
 from . import openai
+from typing import List
 
 # get gpt model env variable, or set default
 GPT_MODEL = os.getenv("GPT_MODEL", "gpt-4")
@@ -107,7 +108,12 @@ def classify_question(question: str, model=GPT_MODEL, token_length=4096):
         }
     ]
 
-    return openai.get_chat_completion(messages, tools=tools, model=model)
+    return openai.get_chat_completion(
+        messages,
+        tools=tools,
+        tool_choice={"type": "function", "function": {"name": "classify_question"}},
+        model=model,
+    )
 
 
 def classify_code(
@@ -151,4 +157,94 @@ def classify_code(
         }
     ]
 
-    return openai.get_chat_completion(messages, tools=tools, model=model)
+    return openai.get_chat_completion(
+        messages,
+        tools=tools,
+        tool_choice={"type": "function", "function": {"name": "classify_code"}},
+        model=model,
+    )
+
+
+def select_partition(
+    question: str, partitions: List[str], model=GPT_MODEL, token_length=4096
+):
+    """
+    Call OpenAI to determine the database partition to use given the question
+    Partitions format example:
+        {
+        "cpp": {"name": "cppcode", "description": "C++ code"},
+        "python": {"name": "pythoncode", "description": "Python code"},
+        "docs": {"name": "docs", "description": "Documentation"},
+        "cython": {"name": "cythoncode", "description": "Cython code"}
+        }
+
+        type : { name of partition , description of partition}
+        the type is what is used by tree sitter to parse the code so we do not need to worry about that
+    """
+    question = question[:token_length]
+
+    partition_text = "The following are the partitions available.\n"
+    for _, value in partitions.items():
+        partition_text += f"Partition Name: {value['name']}, Partition Description: {value['description']}\n"
+    partition_text += (
+        f"Partition Name: all, Partition Description: Search all partitions\n"
+    )
+
+    messages = [
+        {
+            "role": "system",
+            "content": partition_text
+            + f"\nGiven a question determine which database partitions to look for knowledge in. You can specify more than one",
+        },
+        {
+            "role": "user",
+            "content": f"The question is: '{question}'. Given this context, which partitions should I look in?",
+        },
+    ]
+
+    # Define the function for the API call
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "select_partition",
+                "description": "A function which takes in a array of partition names",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "partitions": {
+                            "type": "array",
+                            "description": "The name of each partition to use for the query",
+                            "items": {"type": "string"},
+                        }
+                    },
+                    "required": ["partitions"],
+                },
+            },
+        }
+    ]
+
+    return openai.get_chat_completion(
+        messages,
+        tools=tools,
+        tool_choice={"type": "function", "function": {"name": "select_partition"}},
+        model=model,
+    )
+
+
+def main():
+    # Test get_embeddings function
+    texts = [
+        "Tell me about adding numbers with python",
+        "How do you sum numbers in C++?",
+        "In java whats the way to add numbers?",
+    ]
+    embeddings = openai.get_embeddings(texts)
+
+    for emb, question in zip(embeddings, texts):
+        resp = select_partition(question, emb)
+        print(resp)
+
+
+if __name__ == "__main__":
+    main()
