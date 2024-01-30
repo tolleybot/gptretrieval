@@ -117,9 +117,8 @@ class MilvusDataStore(DataStore):
         The Milvus Datastore allows for storing your indexes and metadata within a Milvus instance.
 
         Args:
-                                                                        create_new (Optional[bool], optional): Whether to overwrite if collection already exists. Defaults to True.
-                                                                        consistency_level(str, optional): Specify the collection consistency level.
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        Defaults to "Bounded" for search performance.
+            create_new (Optional[bool], optional): Whether to overwrite if collection already exists. Defaults to True.
+            consistency_level(str, optional): Specify the collection consistency level.
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         Set to "Strong" in test cases for result validation.
         """
         self.create_new = create_new
@@ -199,6 +198,11 @@ class MilvusDataStore(DataStore):
                     # Either a valid filter or None will be returned
                     filter = self._get_filter(query.filter)
 
+                # check partitions, None will search everything so filter out all
+                if partitions is not None:
+                    if "all" in partitions:
+                        partitions = None
+
                 # Perform our search
                 top_k_ = query.top_k if top_k is None else top_k
                 res = self.col.search(
@@ -210,6 +214,7 @@ class MilvusDataStore(DataStore):
                     output_fields=[
                         field[0] for field in self._get_schema()[1:]
                     ],  # Ignoring pk, embedding
+                    partition_names=partitions,
                 )
                 # Results that will hold our DocumentChunkWithScores
                 results = []
@@ -272,6 +277,11 @@ class MilvusDataStore(DataStore):
                 if query.filter is not None:
                     filter = self._get_filter(query.filter)
 
+                # check partitions, None will search everything so filter out all
+                if partitions is not None:
+                    if "all" in partitions:
+                        partitions = None
+
                 top_k_ = query.top_k if top_k is None else top_k
                 res = self.col.search(
                     data=[query.embedding],
@@ -280,6 +290,7 @@ class MilvusDataStore(DataStore):
                     limit=top_k_,
                     expr=filter,
                     output_fields=[field[0] for field in self._get_schema()[1:]],
+                    partition_names=partitions,
                 )
 
                 results = []
