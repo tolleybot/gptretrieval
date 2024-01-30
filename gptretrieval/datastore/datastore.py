@@ -29,7 +29,9 @@ class DataStore(ABC):
         ]
         return await self._query(queries_with_embeddings, top_k=top_k)
 
-    def query_synch(self, queries: List[Query], top_k=10) -> List[QueryResult]:
+    def query_synch(
+        self, queries: List[Query], top_k=10, partitions: List[str] = None
+    ) -> List[QueryResult]:
         """
         A synchronous version of query Takes in a list of queries and filters and returns a list of query results with matching document chunks and scores.
         """
@@ -38,7 +40,9 @@ class DataStore(ABC):
         query_embeddings = self.get_embeddings(query_texts)
         # hydrate the queries with embeddings
         queries_with_embeddings = [
-            QueryWithEmbedding(**query.dict(), embedding=embedding)
+            QueryWithEmbedding(
+                **query.dict(), embedding=embedding, partitions=partitions
+            )
             for query, embedding in zip(queries, query_embeddings)
         ]
         return self._query_synch(queries_with_embeddings, top_k=top_k)

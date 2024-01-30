@@ -165,7 +165,9 @@ class MilvusDataStore(DataStore):
         """Get the schema for the Milvus collection"""
         return self.schema
 
-    def insert(self, chunks, batch_size=UPSERT_BATCH_SIZE):
+    def insert(
+        self, chunks, batch_size=UPSERT_BATCH_SIZE, partitions: List[str] = None
+    ):
         """inserts data into the milvus collection"""
         pass
 
