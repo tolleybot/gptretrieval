@@ -224,12 +224,17 @@ def select_partition(
         }
     ]
 
-    return openai.get_chat_completion(
+    results = openai.get_chat_completion(
         messages,
         tools=tools,
         tool_choice={"type": "function", "function": {"name": "select_partition"}},
         model=model,
     )
+
+    if "function_args" in results:
+        return results["function_args"]["partitions"]
+
+    return None
 
 
 def main():
