@@ -30,6 +30,12 @@ def clean_str(message):
     return message
 
 
+def clean_escape_chars(json_string):
+    # Remove unescaped newlines and tabs.
+    json_string = re.sub(r"(?<!\\)(\n|\t)", "", json_string)
+    return json_string
+
+
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(3))
 def get_embeddings(texts: List[str]) -> List[List[float]]:
     """
@@ -92,8 +98,12 @@ def get_chat_completion(messages, tools=None, tool_choice="auto", model="gpt-4")
         functions = []
         # Handle each tool call
         for tool_call in tool_calls:
-            function_name = tool_call.function.name
-            function_args = json.loads(tool_call.function.arguments)
+            function_name = (
+                tool_call.function.name
+                if hasattr(tool_call.function, "name")
+                else "unknown"
+            )
+            function_args = json.loads(clean_escape_chars(tool_call.function.arguments))
             functions.append(
                 {"function_name": function_name, "function_args": function_args}
             )
