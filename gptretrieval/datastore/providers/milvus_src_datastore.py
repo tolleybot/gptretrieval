@@ -1,7 +1,7 @@
 from typing import List
 import asyncio
 
-from milvus_base_datastore import (
+from .milvus_base_datastore import (
     MilvusDataStore,
     SCHEMA_V2,
 )
