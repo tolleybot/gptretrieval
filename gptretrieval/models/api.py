@@ -1,6 +1,6 @@
 from ..models.models import Document, DocumentMetadataFilter, Query, QueryResult
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 
 class UpsertRequest(BaseModel):
@@ -13,6 +13,10 @@ class UpsertResponse(BaseModel):
 
 class QueryRequest(BaseModel):
     queries: List[Query]
+
+
+class Partitions(BaseModel):
+    partitions: Dict[str, Dict[str, str]] = None
 
 
 class QueryResponse(BaseModel):
